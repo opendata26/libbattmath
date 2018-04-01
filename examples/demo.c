@@ -8,10 +8,6 @@
 
 #include "../lib/libbattmath.h"
 
-const char *device_strings[] = {
-	"castor",
-};
-
 int main(int argc, char *argv[])
 {
 	enum lbm_device device;
@@ -30,9 +26,9 @@ int main(int argc, char *argv[])
 				temp = round(atoi(optarg) / 1000);
 				break;
 			case 'd':
-				for (int i = 0; i < sizeof(device_strings) / 
-				     sizeof(*device_strings); i++){
-					if (!strcmp(strdup(optarg), device_strings[i])){
+				for (int i = 0; i < sizeof(lbm_device_strings) / 
+				     sizeof(*lbm_device_strings); i++){
+					if (!strcmp(strdup(optarg), lbm_device_strings[i])){
 						device = i;
 						goto break2x;
 					}
