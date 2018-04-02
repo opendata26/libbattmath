@@ -39,18 +39,19 @@ int main(int argc, char *argv[])
 {
 	enum lbm_device device;
 	struct lbm_battery_device battery;
-	int temp, ibat, vbat_sns, option, rbatt, ocv, capacity;
-	
-	while ((option = getopt(argc, argv, "s:i:t:d:")) != -1) {
+	int temp, ocv, fcc, cc, capacity;
+	int option;
+
+	while ((option = getopt(argc, argv, "c:o:t:d:")) != -1) {
 		switch (option) {
-			case 's':
-				vbat_sns = atoi(optarg);
+			case 'c':
+				cc = atoi(optarg);
 				break;
-			case 'i':
-				ibat = atoi(optarg);
+			case 'o':
+				ocv = atoi(optarg);
 				break;
 			case 't':
-				temp = round(atoi(optarg) / 1000);
+				temp = atoi(optarg);
 				break;
 			case 'd':
 				for (int i = 0; i < sizeof(lbm_device_strings) / 
@@ -73,10 +74,9 @@ int main(int argc, char *argv[])
 	if(errno)
 		return EINVAL;
 
-	rbatt = lbm_calculate_rbatt(temp, battery);
-	ocv = lbm_calculate_ocv(vbat_sns, ibat, temp, battery);
-	capacity = lbm_calculate_capacity(vbat_sns, ibat, temp, battery);
+	fcc = lbm_calculate_fcc(temp, battery);
+	printf("Calculated fcc of: %duv \n", fcc);
 
-	printf("Calculated capacity of: %d, ocv of: %d and rbatt of: %d \n",
-	       capacity, ocv, rbatt);
+	capacity = lbm_calculate_capacity(temp, ocv, cc, fcc, battery);
+	printf("Calculated capacity of: %d\% \n", capacity);
 }

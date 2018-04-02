@@ -51,31 +51,26 @@ static int __between(int left, int right, int val)
 	return 0;
 }
 
-static int __calculate_rbatt(int batt_temp, struct lbm_rbatt_table rbatt_table)
+static int __calculate_fcc(int batt_temp, struct lbm_fcc_table fcc_table)
 {
-	int scale, i;
+	int i, fcc_mv;
 
-	for (i = 0; i < sizeof(rbatt_table.temp) /
-	     sizeof(*rbatt_table.temp); i++)
-		if (batt_temp <= rbatt_table.temp[i])
+	for (i = 0; i < sizeof(fcc_table.temp) /
+	     sizeof(*fcc_table.temp); i++)
+		if (batt_temp <= fcc_table.temp[i])
 			break;
 
-	if (batt_temp == rbatt_table.temp[i]) 
-		scale = rbatt_table.lut[i];
+	if (batt_temp == fcc_table.temp[i]) 
+		fcc_mv = fcc_table.lut[i];
 	else 
-		scale = __interpolate(
-			rbatt_table.lut[i - 1],
-			rbatt_table.temp[i - 1],
-			rbatt_table.lut[i],
-			rbatt_table.temp[i],
+		fcc_mv = __interpolate(
+			fcc_table.lut[i - 1],
+			fcc_table.temp[i - 1],
+			fcc_table.lut[i],
+			fcc_table.temp[i],
 			batt_temp);
-	
-	return ((rbatt_table.default_rbatt * scale) / 100)  - /*3*/0;
-}
 
-static int __calculate_ocv(int vbat, int ibat, int rbatt)
-{
-	return vbat + (ibat * rbatt);
+	return fcc_mv * 10000;
 }
 
 static int __calculate_capacity(int ocv, int batt_temp,
@@ -178,34 +173,24 @@ struct lbm_battery_device lbm_device_init(enum lbm_device device)
 	return battery;
 }
 
-int lbm_calculate_rbatt(int batt_temp, struct lbm_battery_device battery)
+/*
+ * Calculates fcc based off battery temprature
+ */
+int lbm_calculate_fcc(int batt_temp, struct lbm_battery_device battery)
 {
-	return __calculate_rbatt(batt_temp, battery.rbatt_table);
+	return __calculate_fcc(batt_temp, battery.fcc_table);
 }
 
-int lbm_calculate_ocv(int vbat, int ibat, int batt_temp, 
-		      struct lbm_battery_device battery)
-{
-	/*
-	 * 1. Calculate rbatt
-	 * 2. Calculate ocv based off that
-	 */
-
-	return __calculate_ocv(vbat, ibat, lbm_calculate_rbatt(batt_temp,
-			       battery));
-}
-
-int lbm_calculate_capacity(int vbat, int ibat, int batt_temp,
+/*
+ * Calculates a capacity from user supplied ocv and fcc
+ */
+int lbm_calculate_capacity(int batt_temp, int ocv, int cc, int fcc,
 			   struct lbm_battery_device battery)
 {
-	/*
-	 * 1. Calculate rbatt
-	 * 2. Calculate ocv based off rbatt and divide by 10 to work with
-	 * downstream ocv luts
-	 * 3. Finally calculate a capacity from that ocv
-	 */
+	int orig_capacity;
 
-	return __calculate_capacity(round(lbm_calculate_ocv(vbat, ibat,
-				    batt_temp, battery) / 10), batt_temp,
-				    battery.ocv_table);
+	orig_capacity = __calculate_capacity((ocv + 5) / 10, batt_temp,
+					      battery.ocv_table);
+
+	return ((fcc * orig_capacity / 100) - cc) * 100 / fcc;
 }

@@ -34,15 +34,14 @@ struct lbm_ocv_table {
 	int lut[31][8];
 };
 
-struct lbm_rbatt_table {
-	int default_rbatt;
+struct lbm_fcc_table {
 	int temp[8];
 	int lut[8];
 };
 
 struct lbm_battery_device {
 	struct lbm_ocv_table ocv_table;
-	struct lbm_rbatt_table rbatt_table;
+	struct lbm_fcc_table fcc_table;
 };
 
 const char *lbm_device_strings[] = {
@@ -91,10 +90,9 @@ struct lbm_battery_device lbm_battery_castor = {
 					{3000, 3000, 3000, 3000, 3000},
 				},
 	},
-	.rbatt_table = {
-		.default_rbatt	= 100,
-		.temp		= {-10, 0, 25, 40, 65},
-		.lut		= {303, 190, 87, 78, 78},
+	.fcc_table = {
+		.temp		= {-10, 0, 25, 50, 65},
+		.lut		= {6010, 6070, 6680, 6780, 6670},
 	},
 };
 
